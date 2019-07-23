@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">NotifySync</string>
+    <string name="icon">Icon</string>
+    <string name="devices">Devices</string>
+    <string name="pair_new_device">Pair new device…</string>
+    <string name="unpair">Unpair</string>
+    <string name="are_you_sure_unpair">Are you sure you want unpair %s</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="pair_new_device_message">Please scan a QR code from NotifySync app on your computer</string>
+    <string name="invalid_new_device_qr_code">Found QR code that does not look like code from NotifySync app</string>
+    <string name="notifications">Notifications</string>
+    <string name="no_notifications">There are no captured notifications yet</string>
+    <string name="background_notification_channel">Background notification channel</string>
+    <string name="not_connected_to_any_device">Not connected to any device</string>
+    <string name="connected_to">Connected to %s</string>
+    <string name="enable_notification_access_message">You have to enable notification access for NotifySync in order to properly application working. You can change this setting later from application preferences</string>
+    <string name="go_to_settings">Go to settings</string>
+    <string name="not_now">Not now</string>
+    <string name="settings">Settings</string>
+    <string name="title_notification_access_settings">Notification access settings</string>
+    <string name="device_name">Device name</string>
+    <string name="summary_notification_access_settings">Open system notification access settings</string>
+</resources>

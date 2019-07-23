@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<EditTextPreference
+			android:key="device_name"
+			android:title="@string/device_name" />
+	<Preference
+			android:key="notification_access_settings"
+			android:title="@string/title_notification_access_settings"
+			android:summary="@string/summary_notification_access_settings" />
+</PreferenceScreen>
