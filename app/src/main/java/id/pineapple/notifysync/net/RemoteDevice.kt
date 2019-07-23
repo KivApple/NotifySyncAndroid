@@ -150,8 +150,10 @@ class RemoteDevice(
 			val packet = encoder.doFinal(data)
 			Log.v(this::class.java.simpleName, "Sending ${packet.size} bytes to $name")
 			try {
-				outputStream.writeShort(packet.size)
-				outputStream.write(packet)
+				synchronized(outputStream) {
+					outputStream.writeShort(packet.size)
+					outputStream.write(packet)
+				}
 			} catch (e: IOException) {
 				if (thread != Thread.currentThread()) {
 					disconnect()
