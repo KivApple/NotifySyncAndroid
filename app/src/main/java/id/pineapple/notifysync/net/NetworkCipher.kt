@@ -5,7 +5,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 abstract class NetworkCipher(mode: Int, key: ByteArray) {
-	private val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+	private val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
 	
 	init {
 		cipher.init(

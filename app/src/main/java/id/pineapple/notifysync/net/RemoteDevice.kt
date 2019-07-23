@@ -12,6 +12,7 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
 import java.security.GeneralSecurityException
+import java.security.MessageDigest
 import java.util.*
 
 class RemoteDevice(
@@ -56,9 +57,10 @@ class RemoteDevice(
 	
 	fun acceptBroadcast(encryptedPacket: ByteArray): Boolean {
 		try {
-			val data = String(broadcastDecoder.doFinal(encryptedPacket)).split(':', limit = 4)
-			Log.i(this::class.java.simpleName, data.joinToString(":"))
+			val broadcastStr = String(broadcastDecoder.doFinal(encryptedPacket))
+			val data = broadcastStr.split(':', limit = 4)
 			if (data.size == 4 && data[1] == "NotifySyncServer" && data[3].isNotEmpty()) {
+				Log.i(this::class.java.simpleName, "Accepted broadcast from $name")
 				return true
 			}
 		} catch (e: GeneralSecurityException) {
@@ -72,13 +74,17 @@ class RemoteDevice(
 			val handshake = String(decoder.doFinal(encryptedHandshake)).split(':', limit = 3)
 			if (handshake.size == 3 && handshake[1] == "NotifySync" && handshake[2].isNotEmpty()) {
 				name = handshake[2]
+				Log.i(this::class.java.simpleName, "Accepted handshake from $name")
 				return synchronized(this) {
 					connectionHandler?.disconnect()
 					connectionHandler = ConnectionHandler(socket, inputStream, decoder)
 					connectionHandler
 				}
+			} else {
+				Log.i(this::class.java.simpleName, "Invalid handshake for $name: $handshake")
 			}
 		} catch (e: GeneralSecurityException) {
+			Log.w(this::class.java.simpleName, "Unable to decode handshake for $name: $e")
 		}
 		return null
 	}
@@ -106,9 +112,13 @@ class RemoteDevice(
 		private val inputStream: DataInputStream,
 		private val decoder: NetworkCipher.PacketDecoder
 	) {
+		val remoteDevice = this@RemoteDevice
 		private val outputStream = DataOutputStream(socket.getOutputStream())
 		private val encoder = NetworkCipher.PacketEncoder(key)
 		private val thread = Thread.currentThread()
+		private val outputDigest = MessageDigest.getInstance("MD5")
+		private val inputDigest = MessageDigest.getInstance("MD5")
+		private val inputHashBytes = ByteArray(16)
 		
 		fun run() {
 			lastSeenIpAddress = socket.inetAddress
@@ -118,41 +128,66 @@ class RemoteDevice(
 				plugin.start(this)
 			}
 			while (!thread.isInterrupted) {
-				val encryptedPacket = try {
-					val packetSize = inputStream.readUnsignedShort()
-					val packet = ByteArray(packetSize)
-					inputStream.read(packet)
-					packet
+				try {
+					val packet = readPacket()
+					if (packet != null) {
+						handleReceivedData(packet)
+					}
 				} catch (e: IOException) {
+					Log.w(this::class.java.simpleName, e.toString())
 					break
-				} catch (e: InterruptedException) {
+				} catch (e: GeneralSecurityException) {
+					Log.w(this::class.java.simpleName, e.toString())
 					break
 				}
-				val packet = String(try {
-					decoder.doFinal(encryptedPacket)
-				} catch (e: GeneralSecurityException) {
-					break
-				})
-				Log.v(this::class.java.simpleName, "Received ${packet.length} characters from $name")
-				handleReceivedData(packet)
 			}
 			try {
 				socket.close()
 			} catch (e: IOException) {
 			}
+			ProtocolServer.instance!!.plugins.forEach { plugin ->
+				plugin.stop(this)
+			}
+			Log.i(this::class.java.simpleName, "Disconnected from $name")
 			synchronized(this@RemoteDevice) {
 				connectionHandler = null
 			}
 			ProtocolServer.instance?.pairedDevicesUpdate()
 		}
 		
-		fun sendPacket(data: ByteArray) {
-			val packet = encoder.doFinal(data)
-			Log.v(this::class.java.simpleName, "Sending ${packet.size} bytes to $name")
+		private fun readEncryptedPacket(): ByteArray? {
+			inputStream.read(inputHashBytes)
+			val packetSize = inputStream.readUnsignedShort()
+			val packet = ByteArray(packetSize)
+			inputStream.read(packet)
+			val actualPacketHash = inputDigest.digest(packet)
+			if (!inputHashBytes.contentEquals(actualPacketHash)) {
+				Log.w(this::class.java.simpleName, "Expected and actual packet hashes are different ($packetSize bytes)")
+				sendStringPacket("error")
+				return null
+			}
+			sendStringPacket("okay")
+			Log.v(this::class.java.simpleName, "Received $packetSize encrypted bytes from $name")
+			return packet
+		}
+		
+		private fun readPacket(): String? {
+			val packet = readEncryptedPacket()
+			if (packet != null) {
+				Log.v(this::class.java.simpleName, "Received ${packet.size} bytes from $name")
+				return String(decoder.doFinal(packet))
+			}
+			return null
+		}
+		
+		private fun sendEncryptedPacket(data: ByteArray) {
+			Log.v(this::class.java.simpleName, "Sending ${data.size} bytes to $name")
 			try {
 				synchronized(outputStream) {
-					outputStream.writeShort(packet.size)
-					outputStream.write(packet)
+					val hash = outputDigest.digest(data)
+					outputStream.write(hash)
+					outputStream.writeShort(data.size)
+					outputStream.write(data)
 				}
 			} catch (e: IOException) {
 				if (thread != Thread.currentThread()) {
@@ -161,6 +196,14 @@ class RemoteDevice(
 					throw e
 				}
 			}
+		}
+		
+		fun sendStringPacket(data: String) = synchronized(encoder) {
+			sendEncryptedPacket(encoder.doFinal(data.toByteArray()))
+		}
+		
+		fun sendPacket(data: String) {
+			sendStringPacket(data)
 		}
 		
 		fun sendNotification(vararg o: BaseNotification) {
@@ -193,8 +236,6 @@ class RemoteDevice(
 		override fun doInBackground(vararg devices: RemoteDevice): Void? {
 			val packets = synchronized(gson) {
 				data.map { gson.toJson(it) }
-			}.map {
-				it.toByteArray()
 			}
 			devices.forEach { device ->
 				packets.forEach { packet ->

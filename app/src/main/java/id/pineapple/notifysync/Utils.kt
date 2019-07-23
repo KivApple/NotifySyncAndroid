@@ -23,10 +23,6 @@ class Utils {
 		
 		@JvmStatic
 		fun isNotificationAccessEnabled(context: Context): Boolean =
-			Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-				.split("/")
-				.contains(NLService::class.java.name) ||
-					PreferenceManager.getDefaultSharedPreferences(context)
-						.getBoolean("notification_access_settings_accessed", false)
+			PreferenceManager.getDefaultSharedPreferences(context).getBoolean("notification_access_settings_accessed", false)
 	}
 }

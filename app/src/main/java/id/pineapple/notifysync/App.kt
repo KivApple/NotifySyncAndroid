@@ -6,6 +6,7 @@ import android.util.Base64
 import androidx.preference.PreferenceManager
 import id.pineapple.notifysync.net.ProtocolServer
 import id.pineapple.notifysync.plugins.BatteryStatusPlugin
+import id.pineapple.notifysync.plugins.FileReceiverPlugin
 import id.pineapple.notifysync.plugins.NotificationListPlugin
 
 class App: Application() {
@@ -24,6 +25,7 @@ class App: Application() {
 		)
 		protocolServer.registerPlugin(this, BatteryStatusPlugin())
 		protocolServer.registerPlugin(this, NotificationListPlugin())
+		protocolServer.registerPlugin(this, FileReceiverPlugin())
 	}
 	
 	override fun onTerminate() {

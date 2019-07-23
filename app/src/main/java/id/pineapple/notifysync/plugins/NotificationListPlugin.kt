@@ -43,59 +43,57 @@ class NotificationListPlugin: BasePlugin, NLService.OnUpdateListener {
 	}
 	
 	override fun handleData(conn: RemoteDevice.ConnectionHandler, type: String, data: JsonObject): Boolean {
-		if (type == "notification") {
-			val key = data["key"].asString
-			if (data.has("actionIndex")) {
-				val actionIndex = data["actionIndex"].asInt
-				val actionTextJson = data["actionText"]
-				val actionText = if (!actionTextJson.isJsonNull) actionTextJson.asString else null
-				Handler(Looper.getMainLooper()).post {
-					val notification = NLService.findNotificationByKey(key)
-					if (notification != null) {
-						val sbn = notification.originalNotification
-						val actions = sbn.notification.actions ?: emptyArray()
-						if (actionIndex < actions.size) {
-							val action = actions[actionIndex]
-							val intent = action.actionIntent
-							if (intent != null) {
-								if (actionText == null) {
-									try {
-										intent.send()
-									} catch (e: PendingIntent.CanceledException) {
-									}
-								} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-									val localIntent = Intent()
-									localIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-									val localBundle = Bundle()
-									action.remoteInputs.forEach { remoteInput ->
-										localBundle.putCharSequence(remoteInput.resultKey, actionText)
-									}
-									RemoteInput.addResultsToIntent(action.remoteInputs, localIntent, localBundle)
-									try {
-										intent.send(context, 0, localIntent)
-									} catch (e: PendingIntent.CanceledException) {
-									}
+		if (type != "notification") return false
+		val key = data["key"].asString
+		if (data.has("actionIndex")) {
+			val actionIndex = data["actionIndex"].asInt
+			val actionTextJson = data["actionText"]
+			val actionText = if (!actionTextJson.isJsonNull) actionTextJson.asString else null
+			Handler(Looper.getMainLooper()).post {
+				val notification = NLService.findNotificationByKey(key)
+				if (notification != null) {
+					val sbn = notification.originalNotification
+					val actions = sbn.notification.actions ?: emptyArray()
+					if (actionIndex < actions.size) {
+						val action = actions[actionIndex]
+						val intent = action.actionIntent
+						if (intent != null) {
+							if (actionText == null) {
+								try {
+									intent.send()
+								} catch (e: PendingIntent.CanceledException) {
+								}
+							} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+								val localIntent = Intent()
+								localIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+								val localBundle = Bundle()
+								action.remoteInputs.forEach { remoteInput ->
+									localBundle.putCharSequence(remoteInput.resultKey, actionText)
+								}
+								RemoteInput.addResultsToIntent(action.remoteInputs, localIntent, localBundle)
+								try {
+									intent.send(context, 0, localIntent)
+								} catch (e: PendingIntent.CanceledException) {
 								}
 							}
 						}
 					}
 				}
+			}
+		} else {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				NLService.instance?.cancelNotification(key)
 			} else {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-					NLService.instance?.cancelNotification(key)
-				} else {
-					val parts = key.split("|", limit = 3)
-					if (parts.size == 3) {
-						val packageName = parts[0]
-						val id = parts[1].toInt()
-						val tag = if (parts[2].isNotEmpty()) parts[2] else null
-						NLService.instance?.cancelNotification(packageName, tag, id)
-					}
+				val parts = key.split("|", limit = 3)
+				if (parts.size == 3) {
+					val packageName = parts[0]
+					val id = parts[1].toInt()
+					val tag = if (parts[2].isNotEmpty()) parts[2] else null
+					NLService.instance?.cancelNotification(packageName, tag, id)
 				}
 			}
-			return true
 		}
-		return false
+		return true
 	}
 	
 	@Synchronized

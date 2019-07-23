@@ -14,6 +14,9 @@ interface BasePlugin {
 	fun start(conn: RemoteDevice.ConnectionHandler) {
 	}
 	
+	fun stop(conn: RemoteDevice.ConnectionHandler) {
+	}
+	
 	fun handleData(conn: RemoteDevice.ConnectionHandler, type: String, data: JsonObject): Boolean {
 		return false
 	}

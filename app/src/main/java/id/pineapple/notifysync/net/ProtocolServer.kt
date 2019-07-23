@@ -111,6 +111,7 @@ class ProtocolServer(
 	
 	inner class RemoteDeviceThread(private val socket: Socket): Thread(remoteDeviceThreadGroup, null as? Runnable) {
 		override fun run() {
+			Log.i(this::class.java.simpleName, "Accepted connection from ${socket.inetAddress.hostName}")
 			val inputStream = DataInputStream(socket.getInputStream())
 			val handshakeData = try {
 				val handshakeLength = inputStream.readUnsignedShort()
@@ -124,13 +125,22 @@ class ProtocolServer(
 				}
 				return
 			}
+			Log.i(this::class.java.simpleName, "Received ${handshakeData.size} bytes of handshake")
 			val handler = synchronized(this@ProtocolServer) {
-				var result = pairingDevice?.acceptHandshake(handshakeData, socket, inputStream)
-				if (result != null) {
-					_pairedDevices.add(pairingDevice!!)
-					pairingDevice = null
-					pairedDevicesUpdate()
-				} else {
+				var result: RemoteDevice.ConnectionHandler? = null
+				if (pairingDevice != null) {
+					Log.i(this::class.java.simpleName, "Attempt to decode handshake of pairing device ${pairingDevice?.name}")
+					result = pairingDevice?.acceptHandshake(handshakeData, socket, inputStream)
+					if (result != null) {
+						Log.i(this::class.java.simpleName, "Handshake of pairing device successfully decoded")
+						_pairedDevices.add(pairingDevice!!)
+						pairingDevice = null
+						pairedDevicesUpdate()
+					} else {
+						Log.i(this::class.java.simpleName, "Failed to decode handshake")
+					}
+				}
+				if (result == null) {
 					for (device in _pairedDevices) {
 						result = device.acceptHandshake(handshakeData, socket, inputStream)
 						if (result != null) {
@@ -143,6 +153,7 @@ class ProtocolServer(
 			if (handler != null) {
 				handler.run()
 			} else {
+				Log.i(this::class.java.simpleName, "Handshake not recognized. Closing socket")
 				socket.close()
 			}
 		}

@@ -1,10 +1,14 @@
 package id.pineapple.notifysync
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import java.util.*
@@ -20,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 		val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 		if (!sharedPreferences.contains("device_name")) {
 			val adapter = BluetoothAdapter.getDefaultAdapter()
-			val deviceName = adapter.name ?: "android-" + ByteArray(4).let {
+			val deviceName = adapter?.name ?: "android-" + ByteArray(4).let {
 				Random().nextBytes(it)
 				it.joinToString("") { b -> String.format("%02x", b) }
 			}
@@ -32,9 +36,13 @@ class MainActivity : AppCompatActivity() {
 		
 		if (savedInstanceState == null) {
 			showFragment(DashboardFragment.newInstance())
-			if (!Utils.isNotificationAccessEnabled(this)) {
-				EnableNotificationAccessDialog.newInstance().show(supportFragmentManager, null)
-			}
+		}
+		
+		if (!Utils.isNotificationAccessEnabled(this)) {
+			EnableNotificationAccessDialog.newInstance().show(supportFragmentManager, null)
+		}
+		if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+			ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 0)
 		}
 		
 		startService(Intent(this, BackgroundService::class.java))
