@@ -65,6 +65,7 @@ class FileReceiverPlugin: BasePlugin {
 		private var notificationId: Int = -1
 		private var totalBytes: Int = 0
 		private var receivedBytes: Int = 0
+		private var currentProgress: Int = 0
 		
 		@Synchronized
 		private fun startReceiving(fileName: String, totalBytes: Int) {
@@ -155,16 +156,20 @@ class FileReceiverPlugin: BasePlugin {
 				notifyCancelReceiving()
 			}
 			notificationId = makeNotificationId()
+			currentProgress = -1
 			notifyChunkReceived()
 		}
 		
 		private fun notifyChunkReceived() {
+			val newProgress = if (totalBytes > 0) (receivedBytes.toLong() * 100 / totalBytes).toInt() else 0
+			if (newProgress == currentProgress) return
+			currentProgress = newProgress
 			val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
 				.setSmallIcon(R.drawable.ic_file_download_black_24dp)
 				.setContentTitle(currentFileName)
 				.setContentText(conn.remoteDevice.name)
 				.setOngoing(true)
-				.setProgress(totalBytes, receivedBytes, false)
+				.setProgress(100, currentProgress, false)
 				.build()
 			notificationManager.notify(notificationId, notification)
 		}
@@ -209,6 +214,11 @@ class FileReceiverPlugin: BasePlugin {
 		private var currentNotificationId = NOTIFICATION_ID_BASE
 		
 		@Synchronized
-		fun makeNotificationId(): Int = currentNotificationId++
+		fun makeNotificationId(): Int {
+			if (currentNotificationId > NOTIFICATION_ID_MAX) {
+				currentNotificationId = NOTIFICATION_ID_BASE
+			}
+			return currentNotificationId++
+		}
 	}
 }

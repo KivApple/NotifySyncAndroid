@@ -116,9 +116,6 @@ class RemoteDevice(
 		private val outputStream = DataOutputStream(socket.getOutputStream())
 		private val encoder = NetworkCipher.PacketEncoder(key)
 		private val thread = Thread.currentThread()
-		private val outputDigest = MessageDigest.getInstance("MD5")
-		private val inputDigest = MessageDigest.getInstance("MD5")
-		private val inputHashBytes = ByteArray(16)
 		
 		fun run() {
 			lastSeenIpAddress = socket.inetAddress
@@ -155,37 +152,24 @@ class RemoteDevice(
 			ProtocolServer.instance?.pairedDevicesUpdate()
 		}
 		
-		private fun readEncryptedPacket(): ByteArray? {
-			inputStream.read(inputHashBytes)
+		private fun readEncryptedPacket(): ByteArray {
 			val packetSize = inputStream.readUnsignedShort()
 			val packet = ByteArray(packetSize)
 			inputStream.read(packet)
-			val actualPacketHash = inputDigest.digest(packet)
-			if (!inputHashBytes.contentEquals(actualPacketHash)) {
-				Log.w(this::class.java.simpleName, "Expected and actual packet hashes are different ($packetSize bytes)")
-				sendStringPacket("error")
-				return null
-			}
-			sendStringPacket("okay")
 			Log.v(this::class.java.simpleName, "Received $packetSize encrypted bytes from $name")
 			return packet
 		}
 		
 		private fun readPacket(): String? {
 			val packet = readEncryptedPacket()
-			if (packet != null) {
-				Log.v(this::class.java.simpleName, "Received ${packet.size} bytes from $name")
-				return String(decoder.doFinal(packet))
-			}
-			return null
+			Log.v(this::class.java.simpleName, "Received ${packet.size} bytes from $name")
+			return String(decoder.doFinal(packet))
 		}
 		
 		private fun sendEncryptedPacket(data: ByteArray) {
 			Log.v(this::class.java.simpleName, "Sending ${data.size} bytes to $name")
 			try {
 				synchronized(outputStream) {
-					val hash = outputDigest.digest(data)
-					outputStream.write(hash)
 					outputStream.writeShort(data.size)
 					outputStream.write(data)
 				}
@@ -198,7 +182,7 @@ class RemoteDevice(
 			}
 		}
 		
-		fun sendStringPacket(data: String) = synchronized(encoder) {
+		private fun sendStringPacket(data: String) = synchronized(encoder) {
 			sendEncryptedPacket(encoder.doFinal(data.toByteArray()))
 		}
 		
