@@ -36,7 +36,7 @@ class ProtocolServer(
 		join()
 		synchronized(this) {
 			_pairedDevices.forEach { device ->
-				device.connectionHandler?.disconnect()
+				device.connection?.disconnect()
 			}
 		}
 		_plugins.forEach { it.destroy() }
@@ -127,7 +127,7 @@ class ProtocolServer(
 			}
 			Log.i(this::class.java.simpleName, "Received ${handshakeData.size} bytes of handshake")
 			val handler = synchronized(this@ProtocolServer) {
-				var result: RemoteDevice.ConnectionHandler? = null
+				var result: RemoteDevice.Connection? = null
 				if (pairingDevice != null) {
 					Log.i(this::class.java.simpleName, "Attempt to decode handshake of pairing device ${pairingDevice?.name}")
 					result = pairingDevice?.acceptHandshake(handshakeData, socket, inputStream)

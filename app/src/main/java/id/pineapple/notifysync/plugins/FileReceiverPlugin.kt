@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Base64
@@ -23,7 +22,7 @@ import java.io.OutputStream
 class FileReceiverPlugin: BasePlugin {
 	private lateinit var context: Context
 	private lateinit var notificationManager: NotificationManager
-	private val receivers = mutableMapOf<RemoteDevice.ConnectionHandler, FileReceiver>()
+	private val receivers = mutableMapOf<RemoteDevice.Connection, FileReceiver>()
 	
 	override fun init(context: Context) {
 		this.context = context
@@ -44,21 +43,21 @@ class FileReceiverPlugin: BasePlugin {
 		}
 	}
 	
-	override fun start(conn: RemoteDevice.ConnectionHandler) {
+	override fun start(conn: RemoteDevice.Connection) {
 		receivers[conn] = FileReceiver(conn)
 	}
 	
-	override fun stop(conn: RemoteDevice.ConnectionHandler) {
+	override fun stop(conn: RemoteDevice.Connection) {
 		receivers.remove(conn)?.cancelReceiving()
 	}
 	
-	override fun handleData(conn: RemoteDevice.ConnectionHandler, type: String, data: JsonObject): Boolean {
+	override fun handleData(conn: RemoteDevice.Connection, type: String, data: JsonObject): Boolean {
 		if (type != "file") return false
 		receivers[conn]!!.handleData(data)
 		return true
 	}
 	
-	inner class FileReceiver(private val conn: RemoteDevice.ConnectionHandler) {
+	inner class FileReceiver(private val conn: RemoteDevice.Connection) {
 		private var currentFileName: String? = null
 		private var outputFile: File? = null
 		private var outputStream: OutputStream? = null

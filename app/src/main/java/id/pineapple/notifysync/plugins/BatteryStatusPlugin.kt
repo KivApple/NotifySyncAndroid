@@ -25,7 +25,7 @@ class BatteryStatusPlugin: BroadcastReceiver(), BasePlugin {
 		context.registerReceiver(this, filter)
 	}
 	
-	override fun start(conn: RemoteDevice.ConnectionHandler) {
+	override fun start(conn: RemoteDevice.Connection) {
 		conn.sendNotification(makeNotification())
 	}
 	

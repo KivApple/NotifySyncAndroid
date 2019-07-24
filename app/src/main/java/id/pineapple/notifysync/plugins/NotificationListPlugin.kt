@@ -32,7 +32,7 @@ class NotificationListPlugin: BasePlugin, NLService.OnUpdateListener {
 	}
 	
 	@Synchronized
-	override fun start(conn: RemoteDevice.ConnectionHandler) {
+	override fun start(conn: RemoteDevice.Connection) {
 		Handler(Looper.getMainLooper()).post {
 			val notifications = NLService.notifications.map {
 				PostedNotificationInfo(it)
@@ -42,7 +42,7 @@ class NotificationListPlugin: BasePlugin, NLService.OnUpdateListener {
 		}
 	}
 	
-	override fun handleData(conn: RemoteDevice.ConnectionHandler, type: String, data: JsonObject): Boolean {
+	override fun handleData(conn: RemoteDevice.Connection, type: String, data: JsonObject): Boolean {
 		if (type != "notification") return false
 		val key = data["key"].asString
 		if (data.has("actionIndex")) {

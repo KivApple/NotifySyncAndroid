@@ -12,7 +12,6 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
 import java.security.GeneralSecurityException
-import java.security.MessageDigest
 import java.util.*
 
 class RemoteDevice(
@@ -23,9 +22,9 @@ class RemoteDevice(
 		private set
 	private val broadcastEncoder = NetworkCipher.PacketEncoder(key)
 	private val broadcastDecoder = NetworkCipher.PacketDecoder(key)
-	var connectionHandler: ConnectionHandler? = null
+	var connection: Connection? = null
 		private set
-	val isConnected: Boolean get() = connectionHandler != null
+	val isConnected: Boolean get() = connection != null
 	var lastSeenIpAddress: InetAddress? = null
 		private set
 	
@@ -68,7 +67,7 @@ class RemoteDevice(
 		return false
 	}
 	
-	fun acceptHandshake(encryptedHandshake: ByteArray, socket: Socket, inputStream: DataInputStream): ConnectionHandler? {
+	fun acceptHandshake(encryptedHandshake: ByteArray, socket: Socket, inputStream: DataInputStream): Connection? {
 		val decoder = NetworkCipher.PacketDecoder(key)
 		try {
 			val handshake = String(decoder.doFinal(encryptedHandshake)).split(':', limit = 3)
@@ -76,9 +75,9 @@ class RemoteDevice(
 				name = handshake[2]
 				Log.i(this::class.java.simpleName, "Accepted handshake from $name")
 				return synchronized(this) {
-					connectionHandler?.disconnect()
-					connectionHandler = ConnectionHandler(socket, inputStream, decoder)
-					connectionHandler
+					connection?.disconnect()
+					connection = Connection(socket, inputStream, decoder)
+					connection
 				}
 			} else {
 				Log.i(this::class.java.simpleName, "Invalid handshake for $name: $handshake")
@@ -90,7 +89,7 @@ class RemoteDevice(
 	}
 	
 	fun disconnect() {
-		synchronized(this) { connectionHandler }?.disconnect()
+		synchronized(this) { connection }?.disconnect()
 	}
 	
 	class BroadcastAsyncTask(private val forceReconnect: Boolean): AsyncTask<RemoteDevice, Void?, Void?>() {
@@ -107,7 +106,7 @@ class RemoteDevice(
 		}
 	}
 	
-	inner class ConnectionHandler(
+	inner class Connection(
 		private val socket: Socket,
 		private val inputStream: DataInputStream,
 		private val decoder: NetworkCipher.PacketDecoder
@@ -147,7 +146,7 @@ class RemoteDevice(
 			}
 			Log.i(this::class.java.simpleName, "Disconnected from $name")
 			synchronized(this@RemoteDevice) {
-				connectionHandler = null
+				connection = null
 			}
 			ProtocolServer.instance?.pairedDevicesUpdate()
 		}
@@ -223,7 +222,7 @@ class RemoteDevice(
 			}
 			devices.forEach { device ->
 				packets.forEach { packet ->
-					device.connectionHandler?.sendPacket(packet)
+					device.connection?.sendPacket(packet)
 				}
 			}
 			return null
