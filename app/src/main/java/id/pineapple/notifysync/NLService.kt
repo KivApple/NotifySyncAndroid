@@ -40,6 +40,7 @@ class NLService: NotificationListenerService() {
 		) {
 			return
 		}
+		if (sbn.packageName == packageName) return
 		val key = extractNotificationKey(sbn)
 		val title = extractNotificationTitle(sbn)
 		val text = extractNotificationText(sbn) ?: return
