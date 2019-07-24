@@ -1,20 +1,16 @@
 package id.pineapple.notifysync
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Base64
 import android.view.*
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import id.pineapple.notifysync.net.ProtocolServer
 import kotlinx.android.synthetic.main.fragment_dashboard.*
 
-class DashboardFragment: Fragment(), DashboardAdapter.AddNewDeviceListener {
+class DashboardFragment: Fragment(), DashboardAdapter.OnAddNewDeviceListener {
 	private var adapter: DashboardAdapter? = null
 	private val refreshDeviceList = {
 		ProtocolServer.instance?.sendBroadcast()
@@ -37,7 +33,7 @@ class DashboardFragment: Fragment(), DashboardAdapter.AddNewDeviceListener {
 	
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		adapter = DashboardAdapter(device_list_recycler_view.context)
-		adapter!!.addNewDeviceListener = this
+		adapter!!.onAddNewDeviceListener = this
 		device_list_recycler_view.adapter = adapter
 		
 		device_list_refresh_layout.setOnRefreshListener { refreshDeviceList() }

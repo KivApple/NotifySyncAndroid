@@ -1,8 +1,6 @@
 package id.pineapple.notifysync
 
-import android.app.Activity
 import android.content.Context
-import android.graphics.Color
 import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
@@ -17,11 +15,13 @@ import kotlinx.android.synthetic.main.item_new_device.*
 import kotlinx.android.synthetic.main.item_notification.*
 
 class DashboardAdapter(
-	private val context: Context
+	private val context: Context,
+	private val devicePickerMode: Boolean = false
 ): RecyclerView.Adapter<DashboardAdapter.BaseViewHolder>(), NLService.OnUpdateListener,
 	ProtocolServer.OnPairedDevicesUpdateListener {
 	
-	var addNewDeviceListener: AddNewDeviceListener? = null
+	var onAddNewDeviceListener: OnAddNewDeviceListener? = null
+	var onDevicePickedListener: OnDevicePickedListener? = null
 	private var items = emptyList<Any>()
 	private val handler = Handler()
 	
@@ -69,18 +69,26 @@ class DashboardAdapter(
 	}
 	
 	private fun updateItems() {
-		items = listOf(DevicesHeaderMarker()) +
-				(ProtocolServer.instance?.pairedDevices ?: listOf()) +
-				listOf(NewDeviceMarker(), NotificationsHeaderMarker()) +
-				if (NLService.notifications.isNotEmpty())
-					NLService.notifications.toList()
-				else
-					listOf<Any>(NoNotificationsMarker())
+		items = if (devicePickerMode) {
+			ProtocolServer.instance?.pairedDevices ?: listOf()
+		} else {
+			listOf(DevicesHeaderMarker()) +
+					(ProtocolServer.instance?.pairedDevices ?: listOf()) +
+					listOf(NewDeviceMarker(), NotificationsHeaderMarker()) +
+					if (NLService.notifications.isNotEmpty())
+						NLService.notifications.toList()
+					else
+						listOf<Any>(NoNotificationsMarker())
+		}
 		notifyDataSetChanged()
 	}
 	
-	interface AddNewDeviceListener {
+	interface OnAddNewDeviceListener {
 		fun onAddNewDevice()
+	}
+	
+	interface OnDevicePickedListener {
+		fun onDevicePicked(remoteDevice: RemoteDevice)
 	}
 	
 	class DevicesHeaderMarker
@@ -117,6 +125,12 @@ class DashboardAdapter(
 					(context as FragmentActivity).supportFragmentManager, null
 				)
 			}
+			unpair_device.visibility = if (devicePickerMode) View.GONE else View.VISIBLE
+			if (devicePickerMode) {
+				itemView.setOnClickListener {
+					onDevicePickedListener?.onDevicePicked(item)
+				}
+			}
 		}
 	}
 	
@@ -126,7 +140,7 @@ class DashboardAdapter(
 		
 		init {
 			new_device.setOnClickListener {
-				addNewDeviceListener?.onAddNewDevice()
+				onAddNewDeviceListener?.onAddNewDevice()
 			}
 		}
 	}

@@ -22,7 +22,10 @@
     <string name="device_name">Device name</string>
     <string name="summary_notification_access_settings">Open system notification access settings</string>
     <string name="file_receiver_notification_channel">Received files</string>
+    <string name="file_sender_notification_channel">Sent files</string>
     <string name="receiving_file_from">Receiving file from %s</string>
     <string name="file_received_from">File received from %s</string>
     <string name="cancel">Cancel</string>
+    <string name="device_not_connected">Device %s isn\'t connected</string>
+    <string name="file_sent_to">File sent to %s</string>
 </resources>

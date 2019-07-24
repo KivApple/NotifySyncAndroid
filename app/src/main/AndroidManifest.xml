@@ -61,7 +61,38 @@
 			</intent-filter>
 		</service>
 		
-		<receiver android:name=".plugins.FileReceiverPlugin$BroadcastReceiver" android:enabled="true" />
+		<receiver
+				android:name=".plugins.FileReceiverPlugin$BroadcastReceiver"
+				android:enabled="true" />
+		
+		<activity
+				android:name=".plugins.SharePlugin$DevicePickerActivity"
+				android:theme="@style/Theme.AppCompat.Light.Dialog.Alert">
+			
+			<intent-filter>
+				<action android:name="android.intent.action.SEND" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="*/*" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SEND_MULTIPLE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="*/*" />
+			</intent-filter>
+			<meta-data
+					android:name="android.service.chooser.chooser_target_service"
+					android:value="id.pineapple.notifysync.plugins.SharePlugin$DevicePickerService" />
+		</activity>
+		<service
+				android:name=".plugins.SharePlugin$DevicePickerService"
+				android:permission="android.permission.BIND_CHOOSER_TARGET_SERVICE">
+			<intent-filter>
+				<action android:name="android.service.chooser.ChooserTargetService" />
+			</intent-filter>
+		</service>
+		<receiver
+				android:name=".plugins.SharePlugin$BroadcastReceiver"
+				android:enabled="true" />
 		
 		<provider
 				android:name=".GenericFileProvider"

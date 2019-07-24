@@ -95,18 +95,23 @@ class FileReceiverPlugin: BasePlugin {
 			if (safeFileName.startsWith(".")) {
 				safeFileName = "_$safeFileName"
 			}
+			if (safeFileName.isBlank()) {
+				safeFileName = "NoName.bin"
+			}
 			try {
 				val destinationDirectory =
-					Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+					Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 				if (File("$destinationDirectory/$safeFileName").exists()) {
 					var counter = 1
+					var newFileName: String
 					do {
 						counter++
 						val dot = safeFileName.lastIndexOf('.')
 						val name = if (dot >= 0) safeFileName.substring(0, dot) else safeFileName
 						val ext = if (dot >= 0) safeFileName.substring(dot) else ""
-						safeFileName = "$name ($counter)$ext"
-					} while (File("$destinationDirectory/$safeFileName").exists())
+						newFileName = "$name ($counter)$ext"
+					} while (File("$destinationDirectory/$newFileName").exists())
+					safeFileName = newFileName
 				}
 				outputFile = File("$destinationDirectory/$safeFileName")
 				outputStream = outputFile?.outputStream()
@@ -185,7 +190,7 @@ class FileReceiverPlugin: BasePlugin {
 				.setContentTitle(currentFileName)
 				.setContentText(conn.remoteDevice.name)
 				.setOngoing(true)
-				.setProgress(100, currentProgress, false)
+				.setProgress(100, currentProgress, totalBytes < 0)
 				.addAction(0, context.getString(R.string.cancel), PendingIntent.getBroadcast(
 					context,
 					notificationId,

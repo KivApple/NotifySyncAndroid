@@ -200,6 +200,12 @@ class RemoteDevice(
 			sendStringPacket(data)
 		}
 		
+		fun sendPacket(data: BaseNotification) {
+			sendStringPacket(synchronized(gson) {
+				gson.toJson(data)
+			})
+		}
+		
 		fun sendNotification(vararg o: BaseNotification) {
 			NotificationAsyncTask(o).execute(this@RemoteDevice)
 		}
