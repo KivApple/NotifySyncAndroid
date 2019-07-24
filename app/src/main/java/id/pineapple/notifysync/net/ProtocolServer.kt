@@ -1,6 +1,8 @@
 package id.pineapple.notifysync.net
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import id.pineapple.notifysync.plugins.BasePlugin
 import java.io.DataInputStream
@@ -21,6 +23,7 @@ class ProtocolServer(
 	private val _plugins = mutableListOf<BasePlugin>()
 	val plugins: List<BasePlugin> get() = _plugins
 	private val broadcastReceiverThread = BroadcastReceiverThread()
+	private val mainHandler = Handler(Looper.getMainLooper())
 	
 	init {
 		broadcastSocket.broadcast = true
@@ -78,9 +81,11 @@ class ProtocolServer(
 	}
 	
 	fun pairedDevicesUpdate() {
-		synchronized(this) {
-			onPairedDevicesUpdateListeners.forEach {
-				it.onPairedDevicesUpdate()
+		mainHandler.post {
+			synchronized(this) {
+				onPairedDevicesUpdateListeners.forEach {
+					it.onPairedDevicesUpdate()
+				}
 			}
 		}
 	}

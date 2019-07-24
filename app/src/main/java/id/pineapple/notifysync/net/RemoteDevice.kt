@@ -78,10 +78,14 @@ class RemoteDevice(
 			if (handshake.size == 4 && handshake[1] == "NotifySync" && handshake[3].isNotEmpty()) {
 				name = handshake[3]
 				Log.i(this::class.java.simpleName, "Accepted handshake from $name")
-				return synchronized(this) {
-					connection?.disconnect()
-					connection = Connection(socket, inputStream, decoder, handshake[2] != "0")
-					connection
+				while (true) {
+					disconnect()
+					synchronized(this) {
+						if (connection == null) {
+							connection = Connection(socket, inputStream, decoder, handshake[2] != "0")
+							return connection
+						}
+					}
 				}
 			} else {
 				Log.i(this::class.java.simpleName, "Invalid handshake for $name: $handshake")
