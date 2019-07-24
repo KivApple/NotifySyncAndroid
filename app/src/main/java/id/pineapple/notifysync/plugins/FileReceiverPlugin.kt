@@ -3,6 +3,7 @@ package id.pineapple.notifysync.plugins
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -14,6 +15,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
 import com.google.gson.JsonObject
 import id.pineapple.notifysync.R
+import id.pineapple.notifysync.net.BaseNotification
+import id.pineapple.notifysync.net.ProtocolServer
 import id.pineapple.notifysync.net.RemoteDevice
 import java.io.File
 import java.io.IOException
@@ -43,19 +46,29 @@ class FileReceiverPlugin: BasePlugin {
 		}
 	}
 	
+	@Synchronized
 	override fun start(conn: RemoteDevice.Connection) {
 		receivers[conn] = FileReceiver(conn)
 	}
 	
+	@Synchronized
 	override fun stop(conn: RemoteDevice.Connection) {
 		receivers.remove(conn)?.cancelReceiving()
 	}
 	
 	override fun handleData(conn: RemoteDevice.Connection, type: String, data: JsonObject): Boolean {
 		if (type != "file") return false
-		receivers[conn]!!.handleData(data)
+		val receiver = synchronized(this) {
+			receivers[conn]
+		} ?: return false
+		receiver.handleData(data)
 		return true
 	}
+	
+	@Synchronized
+	fun findReceiverByRemoteDevice(device: RemoteDevice) = receivers.entries.firstOrNull {
+		it.key.remoteDevice == device
+	}?.value
 	
 	inner class FileReceiver(private val conn: RemoteDevice.Connection) {
 		private var currentFileName: String? = null
@@ -139,6 +152,10 @@ class FileReceiverPlugin: BasePlugin {
 			currentFileName = null
 		}
 		
+		fun requestCancelSending() {
+			conn.sendNotification(BaseNotification("cancel-file"))
+		}
+		
 		fun handleData(data: JsonObject) {
 			when {
 				data.has("name") -> startReceiving(data["name"].asString, data["size"].asInt)
@@ -169,6 +186,14 @@ class FileReceiverPlugin: BasePlugin {
 				.setContentText(conn.remoteDevice.name)
 				.setOngoing(true)
 				.setProgress(100, currentProgress, false)
+				.addAction(0, context.getString(R.string.cancel), PendingIntent.getBroadcast(
+					context,
+					notificationId,
+					Intent(context, BroadcastReceiver::class.java).apply {
+						putExtra("device_id", conn.remoteDevice.id)
+					},
+					PendingIntent.FLAG_UPDATE_CURRENT
+				))
 				.build()
 			notificationManager.notify(notificationId, notification)
 		}
@@ -202,6 +227,16 @@ class FileReceiverPlugin: BasePlugin {
 			if (notificationId < 0) return
 			notificationManager.cancel(notificationId)
 			notificationId = -1
+		}
+	}
+	
+	class BroadcastReceiver: android.content.BroadcastReceiver() {
+		override fun onReceive(content: Context, intent: Intent) {
+			val deviceId = intent.getStringExtra("device_id")!!
+			val device = ProtocolServer.instance?.findPairedDeviceById(deviceId) ?: return
+			val plugin = ProtocolServer.instance?.findPluginByClass(FileReceiverPlugin::class.java) ?: return
+			val receiver = plugin.findReceiverByRemoteDevice(device)
+			receiver?.requestCancelSending()
 		}
 	}
 	

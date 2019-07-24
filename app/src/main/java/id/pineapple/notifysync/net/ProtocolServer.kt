@@ -105,6 +105,12 @@ class ProtocolServer(
 		onPairedDevicesUpdateListeners.remove(listener)
 	}
 	
+	@Synchronized
+	fun findPairedDeviceById(id: String) = _pairedDevices.firstOrNull { id == it.id }
+	
+	@Suppress("UNCHECKED_CAST")
+	fun <T: BasePlugin>findPluginByClass(cls: Class<T>): T? = _plugins.firstOrNull { it::class.java == cls } as? T
+	
 	interface OnPairedDevicesUpdateListener {
 		fun onPairedDevicesUpdate()
 	}

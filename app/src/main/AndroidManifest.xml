@@ -61,6 +61,8 @@
 			</intent-filter>
 		</service>
 		
+		<receiver android:name=".plugins.FileReceiverPlugin$BroadcastReceiver" android:enabled="true" />
+		
 		<provider
 				android:name=".GenericFileProvider"
 				android:authorities="${applicationId}.GenericFileProvider"

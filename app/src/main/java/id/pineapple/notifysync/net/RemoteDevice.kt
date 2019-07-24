@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonSyntaxException
+import id.pineapple.notifysync.toHexString
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -13,12 +14,14 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
 import java.security.GeneralSecurityException
+import java.security.MessageDigest
 import java.util.*
 
 class RemoteDevice(
 	val key: ByteArray,
 	name: String
 ) {
+	val id: String = MessageDigest.getInstance("SHA-1").digest(key).toHexString()
 	var name: String = name
 		private set
 	private val broadcastEncoder = NetworkCipher.PacketEncoder(key)
