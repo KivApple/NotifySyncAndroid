@@ -75,12 +75,12 @@ class FileReceiverPlugin: BasePlugin {
 		private var outputFile: File? = null
 		private var outputStream: OutputStream? = null
 		private var notificationId: Int = -1
-		private var totalBytes: Int = 0
-		private var receivedBytes: Int = 0
+		private var totalBytes: Long = 0
+		private var receivedBytes: Long = 0
 		private var currentProgress: Int = 0
 		
 		@Synchronized
-		private fun startReceiving(fileName: String, totalBytes: Int) {
+		private fun startReceiving(fileName: String, totalBytes: Long) {
 			if (currentFileName != null) {
 				cancelReceiving()
 			}
@@ -158,7 +158,7 @@ class FileReceiverPlugin: BasePlugin {
 		
 		fun handleData(data: JsonObject) {
 			when {
-				data.has("name") -> startReceiving(data["name"].asString, data["size"].asInt)
+				data.has("name") -> startReceiving(data["name"].asString, data["size"].asLong)
 				data.has("chunk") -> receiveChunk(Base64.decode(data["chunk"].asString, Base64.DEFAULT))
 				data.has("status") -> when (data["status"].asString) {
 					"complete" -> finishReceiving()
@@ -177,7 +177,7 @@ class FileReceiverPlugin: BasePlugin {
 		}
 		
 		private fun notifyChunkReceived() {
-			val newProgress = if (totalBytes > 0) (receivedBytes.toLong() * 100 / totalBytes).toInt() else 0
+			val newProgress = if (totalBytes > 0) (receivedBytes * 100 / totalBytes).toInt() else 0
 			if (newProgress == currentProgress) return
 			currentProgress = newProgress
 			val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
