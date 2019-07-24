@@ -26,3 +26,7 @@ class Utils {
 			PreferenceManager.getDefaultSharedPreferences(context).getBoolean("notification_access_settings_accessed", false)
 	}
 }
+
+fun ByteArray.toHexString(): String = joinToString("") {
+	String.format("%02x", it)
+}

@@ -4,6 +4,7 @@ import android.os.AsyncTask
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonElement
+import com.google.gson.JsonSyntaxException
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -70,13 +71,13 @@ class RemoteDevice(
 	fun acceptHandshake(encryptedHandshake: ByteArray, socket: Socket, inputStream: DataInputStream): Connection? {
 		val decoder = NetworkCipher.PacketDecoder(key)
 		try {
-			val handshake = String(decoder.doFinal(encryptedHandshake)).split(':', limit = 3)
-			if (handshake.size == 3 && handshake[1] == "NotifySync" && handshake[2].isNotEmpty()) {
-				name = handshake[2]
+			val handshake = String(decoder.doFinal(encryptedHandshake)).split(':', limit = 4)
+			if (handshake.size == 4 && handshake[1] == "NotifySync" && handshake[3].isNotEmpty()) {
+				name = handshake[3]
 				Log.i(this::class.java.simpleName, "Accepted handshake from $name")
 				return synchronized(this) {
 					connection?.disconnect()
-					connection = Connection(socket, inputStream, decoder)
+					connection = Connection(socket, inputStream, decoder, handshake[2] != "0")
 					connection
 				}
 			} else {
@@ -109,7 +110,8 @@ class RemoteDevice(
 	inner class Connection(
 		private val socket: Socket,
 		private val inputStream: DataInputStream,
-		private val decoder: NetworkCipher.PacketDecoder
+		private val decoder: NetworkCipher.PacketDecoder,
+		private val encryptionEnabled: Boolean
 	) {
 		val remoteDevice = this@RemoteDevice
 		private val outputStream = DataOutputStream(socket.getOutputStream())
@@ -124,16 +126,19 @@ class RemoteDevice(
 				plugin.start(this)
 			}
 			while (!thread.isInterrupted) {
+				var packet = ""
 				try {
-					val packet = readPacket()
-					if (packet != null) {
-						handleReceivedData(packet)
-					}
+					packet = readPacket()
+					handleReceivedData(packet)
 				} catch (e: IOException) {
 					Log.w(this::class.java.simpleName, e.toString())
 					break
 				} catch (e: GeneralSecurityException) {
-					Log.w(this::class.java.simpleName, e.toString())
+					Log.e(this::class.java.simpleName, e.toString())
+					break
+				} catch (e: JsonSyntaxException) {
+					Log.e(this::class.java.simpleName, e.toString())
+					Log.e(this::class.java.simpleName, "JSON: $packet")
 					break
 				}
 			}
@@ -154,15 +159,16 @@ class RemoteDevice(
 		private fun readEncryptedPacket(): ByteArray {
 			val packetSize = inputStream.readUnsignedShort()
 			val packet = ByteArray(packetSize)
-			inputStream.read(packet)
+			inputStream.readFully(packet)
 			Log.v(this::class.java.simpleName, "Received $packetSize encrypted bytes from $name")
 			return packet
 		}
 		
-		private fun readPacket(): String? {
-			val packet = readEncryptedPacket()
+		private fun readPacket(): String {
+			val encryptedPacket = readEncryptedPacket()
+			val packet = if (encryptionEnabled) decoder.doFinal(encryptedPacket) else encryptedPacket
 			Log.v(this::class.java.simpleName, "Received ${packet.size} bytes from $name")
-			return String(decoder.doFinal(packet))
+			return String(packet)
 		}
 		
 		private fun sendEncryptedPacket(data: ByteArray) {
@@ -182,7 +188,9 @@ class RemoteDevice(
 		}
 		
 		private fun sendStringPacket(data: String) = synchronized(encoder) {
-			sendEncryptedPacket(encoder.doFinal(data.toByteArray()))
+			val packet = data.toByteArray()
+			val encryptedPacket = if (encryptionEnabled) encoder.doFinal(packet) else packet
+			sendEncryptedPacket(encryptedPacket)
 		}
 		
 		fun sendPacket(data: String) {
