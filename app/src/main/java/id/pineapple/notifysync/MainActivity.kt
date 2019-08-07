@@ -41,8 +41,16 @@ class MainActivity : AppCompatActivity() {
 		if (!Utils.isNotificationAccessEnabled(this)) {
 			EnableNotificationAccessDialog.newInstance().show(supportFragmentManager, null)
 		}
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-			ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 0)
+		val requiredPermissions = arrayOf(
+			Manifest.permission.WRITE_EXTERNAL_STORAGE,
+			Manifest.permission.READ_PHONE_STATE,
+			Manifest.permission.READ_CONTACTS
+		)
+		for (permission in requiredPermissions) {
+			if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+				ActivityCompat.requestPermissions(this, requiredPermissions, 0)
+				break
+			}
 		}
 		
 		startService(Intent(this, BackgroundService::class.java))
