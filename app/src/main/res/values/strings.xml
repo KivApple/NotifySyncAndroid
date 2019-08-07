@@ -28,4 +28,6 @@
     <string name="cancel">Cancel</string>
     <string name="device_not_connected">Device %s isn\'t connected</string>
     <string name="file_sent_to">File sent to %s</string>
+	<string name="find_device">Find device</string>
+    <string name="device_found">Device found</string>
 </resources>

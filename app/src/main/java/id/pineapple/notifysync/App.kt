@@ -5,10 +5,7 @@ import android.content.SharedPreferences
 import android.util.Base64
 import androidx.preference.PreferenceManager
 import id.pineapple.notifysync.net.ProtocolServer
-import id.pineapple.notifysync.plugins.BatteryStatusPlugin
-import id.pineapple.notifysync.plugins.FileReceiverPlugin
-import id.pineapple.notifysync.plugins.SharePlugin
-import id.pineapple.notifysync.plugins.NotificationListPlugin
+import id.pineapple.notifysync.plugins.*
 
 class App: Application() {
 	private lateinit var preferences: SharedPreferences
@@ -28,6 +25,7 @@ class App: Application() {
 		protocolServer.registerPlugin(this, NotificationListPlugin())
 		protocolServer.registerPlugin(this, FileReceiverPlugin())
 		protocolServer.registerPlugin(this, SharePlugin())
+		protocolServer.registerPlugin(this, FindDevicePlugin())
 	}
 	
 	override fun onTerminate() {

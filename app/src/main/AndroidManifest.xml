@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="id.pineapple.notifysync">
+		  xmlns:tools="http://schemas.android.com/tools" package="id.pineapple.notifysync">
 	
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -22,7 +22,7 @@
 			android:label="@string/app_name"
 			android:supportsRtl="true"
 			android:theme="@style/AppTheme"
-			android:process=":notify_sync">
+			android:process=":notify_sync" tools:ignore="GoogleAppIndexingWarning">
 		<activity
 				android:name=".MainActivity"
 				android:launchMode="singleInstance">
@@ -93,6 +93,15 @@
 		<receiver
 				android:name=".plugins.SharePlugin$BroadcastReceiver"
 				android:enabled="true" />
+		
+		<activity
+				android:name=".plugins.FindDevicePlugin$FindDeviceActivity"
+				android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+				android:screenOrientation="portrait"
+				android:showWhenLocked="true"
+				android:turnScreenOn="true"
+				android:launchMode="singleInstance"
+				tools:targetApi="o_mr1"/>
 		
 		<provider
 				android:name=".GenericFileProvider"
