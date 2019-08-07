@@ -27,6 +27,7 @@ class App: Application() {
 		protocolServer.registerPlugin(this, SharePlugin())
 		protocolServer.registerPlugin(this, FindDevicePlugin())
 		protocolServer.registerPlugin(this, PhoneCallPlugin())
+		protocolServer.registerPlugin(this, ClipboardPlugin())
 	}
 	
 	override fun onTerminate() {

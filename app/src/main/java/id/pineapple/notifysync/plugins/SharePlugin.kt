@@ -32,6 +32,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.lang.Exception
+import java.util.*
 
 class SharePlugin : BasePlugin {
 	private lateinit var context: Context
@@ -85,7 +86,8 @@ class SharePlugin : BasePlugin {
 			}
 			sendUriList(context, remoteDevice, uriList)
 		} else if (intent.hasExtra(Intent.EXTRA_TEXT)) {
-			// TODO
+			val text = intent.getStringExtra(Intent.EXTRA_TEXT)!!
+			remoteDevice.connection?.sendNotification(ClipboardPlugin.ClipboardNotification(text, Date()))
 		}
 	}
 	

@@ -47,15 +47,15 @@ class NLService: NotificationListenerService() {
 		val appName = applicationContext.packageManager.let { packageManager ->
 			packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString()
 		}
-		val timeOffset = GregorianCalendar().let { calendar ->
+		/* val timeOffset = GregorianCalendar().let { calendar ->
 			val timeZone = calendar.timeZone
 			timeZone.rawOffset + if (timeZone.inDaylightTime(Date())) timeZone.dstSavings else 0
-		}
+		} */
 		val item = synchronized(Companion) {
 			val oldItem = notificationsMap[key]?.let { notificationsSet.remove(it); it }
 			val item = NotificationItem(
 				key,
-				sbn.notification.`when` + timeOffset,
+				sbn.notification.`when`,
 				appName,
 				title,
 				text,
