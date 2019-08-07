@@ -4,8 +4,8 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
-import id.pineapple.notifysync.net.RemoteDevice
 import id.pineapple.notifysync.net.ProtocolServer
+import id.pineapple.notifysync.net.RemoteDevice
 
 class UnpairDeviceDialogFragment: DialogFragment() {
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =

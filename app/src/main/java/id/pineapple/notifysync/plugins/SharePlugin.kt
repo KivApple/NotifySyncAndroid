@@ -31,7 +31,6 @@ import kotlinx.android.synthetic.main.activity_device_picker.*
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.lang.Exception
 import java.util.*
 
 class SharePlugin : BasePlugin {

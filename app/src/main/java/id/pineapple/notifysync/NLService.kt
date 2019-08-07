@@ -14,8 +14,6 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import java.util.*
-import kotlin.Comparator
 
 class NLService: NotificationListenerService() {
 	override fun onCreate() {
